@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from decimal import Decimal
 
 # Create your models here.
+
 class Products(models.Model):
     product = models.CharField(max_length=60)
     price = models.DecimalField(max_digits=10, decimal_places=2)

@@ -1,14 +1,47 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.contrib import messages
+from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.decorators import login_required
 from .models import Products, Cart, CartItem
 
+
+def register(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, "Registration successful.")
+            return redirect('product_list')
+    else:
+        form = UserCreationForm()
+    return render(request, "register.html", {"form": form})
+
+def user_login(request):
+    if request.method == "POST":
+        username = request.POST["username"]
+        password = request.POST["password"]
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('product_list')
+        else:
+            messages.error(request, "Invalid username or password.")
+    return render(request, 'login.html')
+
+def user_logout(request):
+    logout(request)
+    return redirect('product_list')
 
 def product_list(request):
     products = Products.objects.all()
     context = {'products': products}
-    return render(request, 'products/product_list.html', context)
+    return render(request, 'product_list.html', context)
 
-
+@login_required
 def add_to_cart(request, product_id):
     try:
         product = get_object_or_404(Products, id=product_id)
@@ -48,7 +81,7 @@ def add_to_cart(request, product_id):
         messages.error(request, f"Error adding item: {str(e)}")
         return redirect("product_list")
 
-
+@login_required
 def view_cart(request):
     cart = None
     cart_items = []
@@ -64,9 +97,9 @@ def view_cart(request):
         cart_items = cart.items.all()
 
     context = {'cart': cart, 'cart_items': cart_items}
-    return render(request, 'products/cart.html', context)
+    return render(request, 'cart.html', context)
 
-
+@login_required
 def update_cart_item(request, item_id):
     cart_item = get_object_or_404(CartItem, id=item_id)
 
@@ -88,7 +121,7 @@ def update_cart_item(request, item_id):
 
     return redirect('view_cart')
 
-
+@login_required
 def remove_from_cart(request, item_id):
     try:
         cart_item = get_object_or_404(CartItem, id=item_id)
